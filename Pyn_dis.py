@@ -43,12 +43,15 @@ class Processor:
             0x00: self.NOP,
             0x01: self.LDBCnn,
             0x02: self.LDBCA,
+            0x03: self.INCBC,
             0x04: self.INCB,
             0x05: self.DECB,
             0X06: self.LDB,
             0X07: self.RLCA,
             0x08: self.EXAFAF,
             0x09: self.ADDHLBC,
+            0x0A: self.LDABC,
+            0x0C: self.INCC,
             0x0D: self.DECC,
             0x0E: self.LDC,
             0x0F: self.RRCA,
@@ -60,14 +63,18 @@ class Processor:
             0x16: self.LDD,
             0x19: self.ADDHLDE,
             0x1A: self.LDADE,
+            0x1B: self.DECDE,
+            0x20: self.JRNZ,
             0x21: self.LXIH,                # Z80 LD HL, Val
             0x22: self.SHLD,                #
             0x23: self.INCHL,
             0x24: self.INCH,                # Z80 INC H,
+            0x25: self.DECH,                # Z80 DEC H,
             0x26: self.LDHn,                # Z80 LD H, Val
             0x27: self.DAA,
+            0x28: self.JRZ,
             0x29: self.ADDHLHL,
-            0X2A: self.LDHL,                # Z80 LD HL,(addr)
+            0X2A: self.LDHLaa,                # Z80 LD HL,(addr)
             0x2B: self.DECHL,
             0x2C: self.INCL,
             0x2E: self.LDL,                # Z80 LD L, Val
@@ -95,6 +102,7 @@ class Processor:
             0x5E: self.LDEHL,
             0x5F: self.LDEA,
             0x61: self.LDHC,
+            0x65: self.LDHL,
             0x66: self.LDHHL,
             0x67: self.LDHA,
             0x68: self.LDLB,
@@ -113,10 +121,12 @@ class Processor:
             0x7D: self.LDAL,
             0x7E: self.LDAHL,
             0x80: self.ADDAB,
+            0x81: self.ADDAC,
             0x83: self.ADDAE,
             0x85: self.ADDAL,
             0x86: self.ADDAHL,
             0x8A: self.ADCAD,
+            0x8B: self.ADCAE,
             0x97: self.SUBA,
             0xA0: self.ANDB,
             0xA6: self.ANDHL,
@@ -126,6 +136,7 @@ class Processor:
             0xB4: self.ORE,
             0xB6: self.ORHL,
             0xB8: self.CPB,
+            0xBC: self.CPH,
             0xBE: self.CPHL,
             0xC0: self.RETNZ,
             0xC1: self.POPB,
@@ -182,6 +193,12 @@ class Processor:
         self.cycle=self.cycle+7
         return "LD (BC), A"
     
+    def INCBC(self):
+        #OpCode 03
+        self.pc=self.pc+1
+        self.cycle=self.cycle+6
+        return "INC BC"
+    
     def INCB(self):
         #OpCode 04
         self.pc=self.pc+1
@@ -217,6 +234,18 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+11
         return "ADD HL, BC"
+    
+    def LDABC(self):
+        #OpCode 0A
+        self.pc=self.pc+1
+        self.cycle=self.cycle+7
+        return "LD A, (BC)"
+    
+    def INCC(self):
+        #OpCode 0C
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "INC C"
     
     def DECC(self):
         #OpCode 0D
@@ -284,6 +313,18 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+7
         return "LD A, (DE)"
+    
+    def DECDE(self):
+        #OpCode 1B
+        self.pc=self.pc+1
+        self.cycle=self.cycle+6
+        return "DEC DE"
+    
+    def JRNZ(self):
+        #OpCode 20
+        self.pc=self.pc+2
+        self.cycle=self.cycle+7   # 12 or 7 depending on execution
+        return "JR NZ, " + format(self.memory[self.pc-1], "02X") 
      
     def LXIH(self):
         #OpCode 21
@@ -310,6 +351,12 @@ class Processor:
         self.cycle=self.cycle+4
         return "INC H"
     
+    def DECH(self):
+        #OpCode 25
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "DEC H"
+    
     def LDHn(self):
         #OpCode 26
         self.pc=self.pc+2
@@ -323,13 +370,19 @@ class Processor:
         self.cycle=self.cycle+4
         return "DAA"
     
+    def JRZ(self):
+        #OpCode 28
+        self.pc=self.pc+2
+        self.cycle=self.cycle+7     # 12 or 7 depending on execution
+        return "JR Z, " + format(self.memory[self.pc-1], "02X")
+    
     def ADDHLHL(self):
         #OpCode 29
         self.pc=self.pc+1
         self.cycle=self.cycle+11
         return "ADD HL, HL"
     
-    def LDHL(self):
+    def LDHLaa(self):
         #OpCode 2A
         self.pc=self.pc+3
         self.cycle=self.cycle+16
@@ -502,6 +555,12 @@ class Processor:
         self.cycle=self.cycle+4
         return "LD H, C"
     
+    def LDHL(self):
+        #OpCode 65
+        self.pc=self.pc+1
+        self.cycle=self.cycle+7
+        return "LD H, L"
+
     def LDHHL(self):
         #OpCode 66
         self.pc=self.pc+1
@@ -610,6 +669,12 @@ class Processor:
         self.cycle=self.cycle+4
         return "ADD A, B"
 
+    def ADDAC(self):
+        #OpCode 81
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "ADD A, C"
+    
     def ADDAE(self):
         #OpCode 83
         self.pc=self.pc+1
@@ -633,6 +698,12 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+4
         return "ADC A, D"
+    
+    def ADCAE(self):
+        #OpCode 8B
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "ADC A, E"
 
     def SUBA(self):
         #OpCode 97
@@ -687,6 +758,12 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+4
         return "CP B"
+    
+    def CPH(self):
+        #OpCode BC
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "CP H"
     
     def CPHL(self):
         #OpCode BE
