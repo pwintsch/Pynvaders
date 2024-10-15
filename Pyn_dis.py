@@ -51,10 +51,12 @@ class Processor:
             0x08: self.EXAFAF,
             0x09: self.ADDHLBC,
             0x0A: self.LDABC,
+            0x0B: self.DECBC,
             0x0C: self.INCC,
             0x0D: self.DECC,
             0x0E: self.LDC,
             0x0F: self.RRCA,
+            0x10: self.DJNZ,
             0x11: self.LDDEnn,
             0x12: self.LDDEA,
             0x13: self.INCDE,
@@ -64,6 +66,8 @@ class Processor:
             0x19: self.ADDHLDE,
             0x1A: self.LDADE,
             0x1B: self.DECDE,
+            0x1C: self.INCE,
+            0x1F: self.RRA,
             0x20: self.JRNZ,
             0x21: self.LXIH,                # Z80 LD HL, Val
             0x22: self.SHLD,                #
@@ -131,6 +135,7 @@ class Processor:
             0xA0: self.ANDB,
             0xA6: self.ANDHL,
             0xA7: self.ANDA,
+            0xA8: self.XORB,
             0xAF: self.XORA,
             0xB0: self.ORB,
             0xB4: self.ORE,
@@ -172,7 +177,8 @@ class Processor:
             0xF6: self.ORV,
             0xFA: self.JPM,
             0xFB: self.EI,
-            0xFE: self.CP }
+            0xFE: self.CP,
+            0xFF: self.RST38 }
         
     def NOP(self):
         #OpCode 00
@@ -241,6 +247,12 @@ class Processor:
         self.cycle=self.cycle+7
         return "LD A, (BC)"
     
+    def DECBC(self):
+        #OpCode 0B
+        self.pc=self.pc+1
+        self.cycle=self.cycle+6
+        return "DEC BC"
+    
     def INCC(self):
         #OpCode 0C
         self.pc=self.pc+1
@@ -265,6 +277,12 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+4
         return "RRCA"
+    
+    def DJNZ(self):
+        #OpCode 10
+        self.pc=self.pc+2
+        self.cycle=self.cycle+7    # 12 or 7 depending on execution
+        return "DJNZ, " + format(self.memory[self.pc-1], "02X")
     
     def LDDEnn(self):
         #OpCode 11
@@ -319,6 +337,18 @@ class Processor:
         self.pc=self.pc+1
         self.cycle=self.cycle+6
         return "DEC DE"
+    
+    def INCE(self):
+        #OpCode 1C
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "INC E"
+    
+    def RRA(self):
+        #OpCode 1F
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "RRA"
     
     def JRNZ(self):
         #OpCode 20
@@ -729,6 +759,12 @@ class Processor:
         self.cycle=self.cycle+4
         return "AND A"
     
+    def XORB(self):
+        #OpCode A8
+        self.pc=self.pc+1
+        self.cycle=self.cycle+4
+        return "XOR B"
+    
     def XORA(self):
         #OpCode AF
         self.pc=self.pc+1
@@ -980,13 +1016,20 @@ class Processor:
         return "EI"
 
     def CP(self):
+        #OpCode FE
         self.pc=self.pc+2
         self.cycle=self.cycle+7
         value=self.memory[self.pc-1]
         return "CP " + format(value, "02X")
+    
+    def RST38(self):
+        #OpCode FF
+        self.pc=self.pc+1
+        self.cycle=self.cycle+11
+        return "RST 38"
 
 
-
+CODE_END=0x1A90
 
             
 def main():
