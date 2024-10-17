@@ -1,4 +1,5 @@
 from pathlib import Path
+from time import perf_counter
 
 import numpy as np
 
@@ -10,8 +11,15 @@ class Processor:
         self.pc=0
         self.InitialiseFuncMap()
         self.cycle=0
+        self.running=False
+        self.instructionsExecuted=0
 
-    
+    def reset(self):
+        self.pc=0
+        self.cycle=0
+        self.running=False
+        self.instructionsExecuted=0
+
     def load(self, start, program):
         myFileName=program
         myFile=Path(myFileName)
@@ -24,6 +32,8 @@ class Processor:
         else:
             return False
 
+    def setOpCode(self, address, opCode):
+        self.memory[address]=opCode
 
     def fetch(self):
         op= int(self.memory[self.pc])
@@ -33,10 +43,20 @@ class Processor:
             opCode=opCode + self.funcMap[op]()
         else:
             opCode=opCode + "NOT YET IMPLEMENTED"
-            found=False
-            
+            found=False            
         return opCode, found
     
+    def run(self):
+        self.running=True
+        while self.running:
+            opCode, found=self.fetch()
+            if not found:
+                print ("ERROR - OpCode not found")
+                break
+            if self.pc>=self.programSize:
+                break
+            self.instructionsExecuted=self.instructionsExecuted+1
+        return self.cycle
 
     def InitialiseFuncMap(self):
         self.funcMap = {
@@ -116,6 +136,7 @@ class Processor:
             0x71: self.LDHLC,
             0x72: self.LDHLD,
             0x73: self.LDHLE,
+            0x76: self.HLT,
             0x77: self.LDHLA,
             0x78: self.LDAB,
             0x79: self.LDAC,
@@ -190,7 +211,7 @@ class Processor:
         #OpCode 01
         self.pc=self.pc+3
         self.cycle=self.cycle+10
-        regValue=int(self.memory[self.pc-1])+int(self.memory[self.pc-2])*256
+        regValue=int(self.memory[self.pc-2])+int(self.memory[self.pc-1])*256
         return "LD BC, " + format(regValue, "04X")
     
     def LDBCA(self):
@@ -288,7 +309,7 @@ class Processor:
         #OpCode 11
         self.pc=self.pc+3
         self.cycle=self.cycle+10
-        regValue=int(self.memory[self.pc-1])+int(self.memory[self.pc-2])*256
+        regValue=int(self.memory[self.pc-2])+int(self.memory[self.pc-1])*256
         return "LD DE, " + format(regValue, "04X")
 
     def LDDEA(self):
@@ -442,7 +463,7 @@ class Processor:
         #OpCode 31
         self.pc=self.pc+3
         self.cycle=self.cycle+10
-        regValue=int(self.memory[self.pc-1])+int(self.memory[self.pc-2])*256
+        regValue=int(self.memory[self.pc-2])+int(self.memory[self.pc-1])*256
         return "LD SP, " + format(regValue, "04X")
 
     def CPL(self):
@@ -456,7 +477,7 @@ class Processor:
         self.pc=self.pc+3
         self.cycle=self.cycle+13
         address=int(self.memory[self.pc-2])+int(self.memory[self.pc-1])*256
-        return "LD " + format(address, "04X") + ", A"
+        return "LD (" + format(address, "04X") + "), A"
 
     def INCatHL(self):
         #OpCode 34
@@ -645,6 +666,13 @@ class Processor:
         self.cycle=self.cycle+7
         return "LD (HL), E"
     
+    def HLT(self):
+        #OpCode 76
+        self.pc=self.pc+1
+        self.cycle=self.cycle+7
+        self.running=False
+        return "HLT"
+
     def LDHLA(self):
         #OpCode 77
         self.pc=self.pc+1
@@ -994,7 +1022,7 @@ class Processor:
         #OpCode F5
         self.pc=self.pc+1
         self.cycle=self.cycle+11
-        return "PUSH PSW"
+        return "PUSH AF"
     
     def ORV(self):
         #OpCode F6
@@ -1049,7 +1077,17 @@ def main():
     else:
         print ("Problem with invaders.h")
     program=[]
+
+    proc.setOpCode(CODE_END, 0x76)
+    start=perf_counter()
+    proc.run()
+    end=perf_counter()
+    print ("Execution time: ", end-start)
+    print ("Number of cycles: ", proc.cycle)
+    print ("Number of instructions: ", proc.instructionsExecuted)
+
     instuctionFound=True
+
     while instuctionFound:
         instr, instuctionFound=proc.fetch()
         program.append(instr)
@@ -1058,7 +1096,7 @@ def main():
     for x in range(len(program)):
         outputText = program[x] + "\n"
         outputFile.write(outputText)
-        print (program[x])
+        # print (program[x])
     outputFile.close()
     print ("File written") 
 

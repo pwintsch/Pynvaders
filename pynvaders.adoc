@@ -1,1 +1,22 @@
 = Welcome to Pynvaders
+
+So my plan was to write a Space invaders emulator in Python.
+After having tried different strategies in PyRetroscreen to check how to update the screen quickly I decided to write a disassembler for the intel 8080 processor and specifically targetted to the Space Invaders ROMs.
+
+After a bit of research I figured a dictionary of functions would be the most appropriate way to go about it and so dilligently set about disassembling the whole ROM.
+
+It has to be said that Github Copilot saved me hours of time in doing this, once I set up the dictionary to take the OpCode with a function name and position myself at the right point in the source file it would basically suggest the perfect function. A couple of bugs crept in (in particular it would inverse hi and lo bytes when calculating a 16 bit address).
+
+And voila over a weekend and a couple of evening I had a full disassembler in Python for this subset of the 8080 instruction set - HAPPY DAYS !!!
+
+And then reading about optimisation of emulators on the internet, a doubt crept in, would Python even on a M2 processor be quick enough to run a Z80 emulator ?
+
+In short no ! 
+
+A 4Mhz Z80 could process about 400'000 instructions a second. I wrote a quick loop and quickly realised that as it stood my Python emulator would run at best 200'000 NOP instructions, without any peripheral handdling.
+
+It seems to me the gap is too big - I am not going to spend several weekends dedicating myself to this problem for the whole thing to be too slow, *so Pynvaders is abandoned* !!!!
+
+No more white space delimitation and back to strong typing and curly braces for my fun !!!
+
+The big debate will now be Swift, C or C++ or a mix of Swift and one of C or C++.
